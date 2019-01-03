@@ -313,10 +313,12 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 		return nil, err
 	}
 
+	queues := make(map[string]uint64)
 	totalQueued := 0
 	totalQueues := 0
 	// queue size is cached so this should be very efficient.
 	s.store.EachQueue(func(q storage.Queue) {
+		queues[q.Name()] = q.Size()
 		totalQueued += int(q.Size())
 		totalQueues++
 	})
@@ -325,6 +327,7 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 		"server_utc_time": time.Now().UTC().Format("03:04:05 UTC"),
 		"faktory": map[string]interface{}{
 			"default_size":    defalt.Size(),
+			"queues":          queues,
 			"total_failures":  s.store.TotalFailures(),
 			"total_processed": s.store.TotalProcessed(),
 			"total_enqueued":  totalQueued,
