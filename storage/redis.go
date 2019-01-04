@@ -133,6 +133,16 @@ func BootRedis(path string, sock string) (func(), error) {
 		}()
 	}
 
+	for i := 0; i < 250; i++ {
+		_, err = rclient.Ping().Result()
+		if err == nil || strings.Contains(err.Error(), "LOADING") == false {
+			break
+		}
+
+		util.Info("Redis is loading the dataset in memory: Waiting")
+		time.Sleep(time.Second)
+	}
+
 	_, err = rclient.Ping().Result()
 	if err != nil {
 		return nil, err
