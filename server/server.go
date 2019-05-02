@@ -129,8 +129,10 @@ func (s *Server) Run() error {
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
+			util.Error("Failed accepting incoming connection", err)
 			return nil
 		}
+
 		go func(conn net.Conn) {
 			c := startConnection(conn, s)
 			if c == nil {
