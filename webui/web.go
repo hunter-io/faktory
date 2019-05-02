@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/contribsys/faktory/server"
-	"github.com/contribsys/faktory/util"
+	"github.com/hunter-io/faktory/server"
+	"github.com/hunter-io/faktory/util"
 	"github.com/justinas/nosurf"
 )
 

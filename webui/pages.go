@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/contribsys/faktory/server"
+	"github.com/hunter-io/faktory/server"
 )
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {

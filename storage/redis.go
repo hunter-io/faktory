@@ -16,8 +16,8 @@ import (
 
 	"regexp"
 
-	"github.com/contribsys/faktory/client"
-	"github.com/contribsys/faktory/util"
+	"github.com/hunter-io/faktory/client"
+	"github.com/hunter-io/faktory/util"
 	"github.com/go-redis/redis"
 )
 

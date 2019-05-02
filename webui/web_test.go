@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/contribsys/faktory/server"
-	"github.com/contribsys/faktory/storage"
-	"github.com/contribsys/faktory/util"
+	"github.com/hunter-io/faktory/server"
+	"github.com/hunter-io/faktory/storage"
+	"github.com/hunter-io/faktory/util"
 	"github.com/stretchr/testify/assert"
 )
 

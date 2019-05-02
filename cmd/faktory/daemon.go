@@ -5,10 +5,10 @@ import (
 	"log"
 	"time"
 
-	"github.com/contribsys/faktory/cli"
-	"github.com/contribsys/faktory/client"
-	"github.com/contribsys/faktory/util"
-	"github.com/contribsys/faktory/webui"
+	"github.com/hunter-io/faktory/cli"
+	"github.com/hunter-io/faktory/client"
+	"github.com/hunter-io/faktory/util"
+	"github.com/hunter-io/faktory/webui"
 )
 
 func logPreamble() {

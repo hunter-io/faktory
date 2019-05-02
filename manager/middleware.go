@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/contribsys/faktory/client"
+	"github.com/hunter-io/faktory/client"
 )
 
 type MiddlewareFunc func(next func() error, ctx Context) error

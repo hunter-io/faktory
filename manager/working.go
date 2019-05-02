@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/contribsys/faktory/client"
-	"github.com/contribsys/faktory/storage"
-	"github.com/contribsys/faktory/util"
+	"github.com/hunter-io/faktory/client"
+	"github.com/hunter-io/faktory/storage"
+	"github.com/hunter-io/faktory/util"
 )
 
 var (

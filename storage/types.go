@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/contribsys/faktory/client"
+	"github.com/hunter-io/faktory/client"
 	"github.com/go-redis/redis"
 )
 

@@ -4,8 +4,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/contribsys/faktory/manager"
-	"github.com/contribsys/faktory/util"
+	"github.com/hunter-io/faktory/manager"
+	"github.com/hunter-io/faktory/util"
 )
 
 type reservationReaper struct {

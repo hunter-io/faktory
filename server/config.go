@@ -1,6 +1,6 @@
 package server
 
-import "github.com/contribsys/faktory/util"
+import "github.com/hunter-io/faktory/util"
 
 type ServerOptions struct {
 	Binding          string

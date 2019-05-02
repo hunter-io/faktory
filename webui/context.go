@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/contribsys/faktory/server"
-	"github.com/contribsys/faktory/storage"
+	"github.com/hunter-io/faktory/server"
+	"github.com/hunter-io/faktory/storage"
 )
 
 type Context interface {

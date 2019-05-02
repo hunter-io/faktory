@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/contribsys/faktory/util"
+	"github.com/hunter-io/faktory/util"
 )
 
 //
