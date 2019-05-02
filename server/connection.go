@@ -3,8 +3,9 @@ package server
 import (
 	"bufio"
 	"fmt"
-	"io"
+	"net"
 	"strconv"
+	"time"
 )
 
 // Represents a connection to a faktory client.
@@ -15,7 +16,7 @@ import (
 // https://redis.io/topics/protocol
 type Connection struct {
 	client *ClientData
-	conn   io.WriteCloser
+	conn   net.Conn
 	buf    *bufio.Reader
 }
 
@@ -31,6 +32,10 @@ func (c *Connection) Error(cmd string, err error) error {
 		_, err = c.conn.Write([]byte(fmt.Sprintf("-ERR %s\r\n", err.Error())))
 	}
 	return err
+}
+
+func (c *Connection) SetDeadline(t time.Time) error {
+	return c.conn.SetDeadline(t)
 }
 
 func (c *Connection) Ok() error {
