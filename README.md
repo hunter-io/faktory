@@ -30,6 +30,7 @@ To deploy a new version of Faktory on the Hunter infrastructure:
 - execute the test suite with `make test`
 - compile the binary for Linux with `GOOS=linux GOARCH=amd64 make build`
 - upload the binary on the Faktory server using scp `scp -i ... faktory ubuntu@faktory:DEST`
+- use `chmod +x faktory` to ensure the binary can be executed
 - archive the previous version of faktory in `/usr/bin/faktory` and replace it with the new one
 - restart the server with `systemctl faktory restart`
 
