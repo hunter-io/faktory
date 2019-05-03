@@ -23,6 +23,17 @@ the Faktory API to fetch a job from a queue.
 
 See the [Installation wiki page](https://github.com/hunter-io/faktory/wiki/Installation) for current installation methods.
 
+## Deployment
+
+To deploy a new version of Faktory on the Hunter infrastructure:
+- update the dependencies with `make prepare`
+- execute the test suite with `make test`
+- compile the binary for Linux with `GOOS=linux GOARCH=amd64 make build`
+- upload the binary on the Faktory server using scp `scp -i ... faktory ubuntu@faktory:DEST`
+- use `chmod +x faktory` to ensure the binary can be executed
+- archive the previous version of faktory in `/usr/bin/faktory` and replace it with the new one
+- restart the server with `systemctl faktory restart`
+
 ## Documentation
 
 Please [see the Faktory wiki](https://github.com/hunter-io/faktory/wiki) for full documentation.
