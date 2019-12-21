@@ -193,7 +193,7 @@ func OpenRedis(sock string) (Store, error) {
 		Network:      "unix",
 		Addr:         sock,
 		DB:           db,
-		PoolSize:     5000,
+		PoolSize:     9950,
 		PoolTimeout:  time.Minute,
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 10,
