@@ -16,9 +16,9 @@ import (
 
 	"regexp"
 
+	"github.com/go-redis/redis"
 	"github.com/hunter-io/faktory/client"
 	"github.com/hunter-io/faktory/util"
-	"github.com/go-redis/redis"
 )
 
 type redisStore struct {
@@ -193,7 +193,7 @@ func OpenRedis(sock string) (Store, error) {
 		Network:  "unix",
 		Addr:     sock,
 		DB:       db,
-		PoolSize: 25000,
+		PoolSize: 5000,
 	})
 	_, err := rs.rclient.Ping().Result()
 	if err != nil {
