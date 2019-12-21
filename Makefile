@@ -47,8 +47,8 @@ test: clean generate ## Execute test suite
 dimg: xbuild ## Make a Docker image for the current version
 	#eval $(shell docker-machine env default)
 	docker build \
-		--tag contribsys/faktory:$(VERSION) \
-		--tag contribsys/faktory:latest \
+		--tag eu.gcr.io/hunter-io/faktory:$(VERSION) \
+		--tag eu.gcr.io/hunter-io/faktory:latest \
 		.
 
 drun: ## Run Faktory in a local Docker image, see also "make dimg"
@@ -56,23 +56,23 @@ drun: ## Run Faktory in a local Docker image, see also "make dimg"
 		-v faktory-data:/var/lib/faktory \
 		-p 127.0.0.1:7419:7419 \
 		-p 127.0.0.1:7420:7420 \
-		contribsys/faktory:latest /faktory -e production
+		eu.gcr.io/hunter-io/faktory:latest /faktory -e production
 
 dmon: ## Monitor Redis within the running Docker image
 	docker run --rm -it -t -i \
 		-v faktory-data:/var/lib/faktory \
-		contribsys/faktory:latest /usr/bin/redis-cli -s /var/lib/faktory/db/redis.sock monitor
+		eu.gcr.io/hunter-io/faktory:latest /usr/bin/redis-cli -s /var/lib/faktory/db/redis.sock monitor
 
 #dinsp:
 	#docker run --rm -it -e "FAKTORY_PASSWORD=${PASSWORD}" \
 		#-p 127.0.0.1:7419:7419 \
 		#-p 127.0.0.1:7420:7420 \
 		#-v faktory-data:/var/lib/faktory \
-		#contribsys/faktory:$(VERSION) /bin/bash
+		#eu.gcr.io/hunter-io/faktory:$(VERSION) /bin/bash
 
 dpush: tag
-	docker push contribsys/faktory:$(VERSION)
-	docker push contribsys/faktory:latest
+	docker push eu.gcr.io/hunter-io/faktory:$(VERSION)
+	docker push eu.gcr.io/hunter-io/faktory:latest
 
 generate:
 	go generate github.com/hunter-io/faktory/webui
@@ -177,8 +177,8 @@ tag:
 	git tag v$(VERSION)-$(ITERATION) && git push --tags || :
 
 upload:	package tag
-	package_cloud push contribsys/faktory/ubuntu/xenial packaging/output/systemd/$(NAME)_$(VERSION)-$(ITERATION)_amd64.deb
-	package_cloud push contribsys/faktory/el/7 packaging/output/systemd/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
+	package_cloud push eu.gcr.io/hunter-io/faktory/ubuntu/xenial packaging/output/systemd/$(NAME)_$(VERSION)-$(ITERATION)_amd64.deb
+	package_cloud push eu.gcr.io/hunter-io/faktory/el/7 packaging/output/systemd/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
 
 .PHONY: help all clean test build package upload
 
