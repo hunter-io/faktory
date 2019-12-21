@@ -190,10 +190,13 @@ func OpenRedis(sock string) (Store, error) {
 	rs.initSorted()
 
 	rs.rclient = redis.NewClient(&redis.Options{
-		Network:  "unix",
-		Addr:     sock,
-		DB:       db,
-		PoolSize: 5000,
+		Network:      "unix",
+		Addr:         sock,
+		DB:           db,
+		PoolSize:     5000,
+		PoolTimeout:  time.Minute,
+		ReadTimeout:  time.Second * 10,
+		WriteTimeout: time.Second * 10,
 	})
 	_, err := rs.rclient.Ping().Result()
 	if err != nil {
