@@ -213,6 +213,8 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 		return nil
 	}
 
+	util.Debug(line)
+
 	valid := strings.HasPrefix(line, "HELLO {")
 	if !valid {
 		util.Infof("Invalid preamble: %s", line)
@@ -248,8 +250,10 @@ func startConnection(conn net.Conn, s *Server) *Connection {
 
 	if client.Wid == "" {
 		// a producer, not a consumer connection
+		util.Debug("Producer connected to server without WID")
 	} else {
-		s.workers.heartbeat(client, cn)
+		_, ok := s.workers.heartbeat(client, cn)
+		util.Debugf("Registered worker following HELLO, status: %v", ok)
 	}
 
 	_, err = conn.Write([]byte("+OK\r\n"))
@@ -279,11 +283,6 @@ func (s *Server) processLines(conn *Connection) {
 			return
 		}
 
-		// To ensure only valid connections are kept around, a connection is closed
-		// after 2 minutes of inactivity. Heartbeats happen every 15 seconds at most
-		// so this deadline should only affect invalid connections.
-		conn.SetDeadline(time.Now().Add(time.Minute * 2))
-
 		if s.closed {
 			conn.Error("Closing connection", newTaggedError("SHUTDOWN", fmt.Errorf("Shutdown in progress")))
 			conn.Close()
@@ -291,7 +290,7 @@ func (s *Server) processLines(conn *Connection) {
 		}
 		cmd = strings.TrimSuffix(cmd, "\r\n")
 		cmd = strings.TrimSuffix(cmd, "\n")
-		//util.Debug(cmd)
+		util.Debug(cmd)
 
 		idx := strings.Index(cmd, " ")
 		verb := cmd

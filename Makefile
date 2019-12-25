@@ -1,5 +1,5 @@
 NAME=faktory
-VERSION=0.10.0
+VERSION=0.12.0
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
 ITERATION=1

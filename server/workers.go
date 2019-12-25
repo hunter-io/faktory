@@ -164,6 +164,10 @@ func (w *workers) heartbeat(client *ClientData, cls io.Closer) (*ClientData, boo
 		entry.connections[cls] = true
 		w.mu.Unlock()
 		ok = true
+
+		util.Debugf("Registered new worker: %v", client.Wid)
+	} else {
+		util.Debugf("Heartbeat received from invalid worker: %v", client.Wid)
 	}
 
 	return entry, ok
