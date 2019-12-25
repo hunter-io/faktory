@@ -166,6 +166,7 @@ func Dial(srv *Server, password string) (*Client, error) {
 		}
 		if x, ok := conn.(*net.TCPConn); ok {
 			x.SetKeepAlive(true)
+			x.SetKeepAlivePeriod(time.Minute)
 		}
 	}
 
