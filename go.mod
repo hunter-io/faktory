@@ -7,7 +7,7 @@ require (
 	github.com/apex/log v1.1.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-redis/redis v0.0.0-20181009075230-daf101bd7905
-	github.com/justinas/nosurf v0.0.0-20171023064657-7182011986c4
+	github.com/justinas/nosurf v1.1.1
 	github.com/onsi/ginkgo v1.14.2 // indirect
 	github.com/onsi/gomega v1.10.3 // indirect
 	github.com/pkg/errors v0.8.0 // indirect
