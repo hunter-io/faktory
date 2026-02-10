@@ -1,0 +1,16 @@
+FROM golang:1.25-alpine
+
+RUN apk add --no-cache git redis
+
+RUN go install github.com/benbjohnson/ego/cmd/ego@latest
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN go generate github.com/hunter-io/faktory/webui
+
+CMD ["go", "test", "./..."]
