@@ -1,10 +1,12 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/hunter-io/faktory/util"
 	"github.com/stretchr/testify/assert"
@@ -169,6 +171,67 @@ func pushAndPop(t *testing.T, n int, q Queue) {
 		assert.NotNil(t, value)
 		atomic.AddInt64(&counter, -1)
 	}
+}
+
+func TestBPopRespectsContext(t *testing.T) {
+	withRedis(t, "bpop-ctx", func(t *testing.T, store Store) {
+		store.Flush()
+		q, err := store.GetQueue("default")
+		assert.NoError(t, err)
+
+		// A cancelled context should return immediately with the context error,
+		// rather than blocking for the 2-second BRPop timeout.
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel() // cancel immediately
+
+		start := time.Now()
+		data, err := q.BPop(ctx)
+		elapsed := time.Since(start)
+
+		assert.Nil(t, data)
+		assert.Error(t, err)
+		assert.Equal(t, context.Canceled, err)
+		assert.True(t, elapsed < 500*time.Millisecond, "BPop should return immediately on cancelled context, took: %v", elapsed)
+	})
+}
+
+func TestEachQueueConcurrentAccess(t *testing.T) {
+	withRedis(t, "eachqueue", func(t *testing.T, store Store) {
+		store.Flush()
+
+		// Create some initial queues
+		for i := 0; i < 5; i++ {
+			_, err := store.GetQueue(fmt.Sprintf("queue-%d", i))
+			assert.NoError(t, err)
+		}
+
+		// Concurrently iterate and add queues — this should not panic or race.
+		var wg sync.WaitGroup
+		for i := 0; i < 10; i++ {
+			wg.Add(1)
+			go func(n int) {
+				defer wg.Done()
+				store.EachQueue(func(q Queue) {
+					_ = q.Name()
+				})
+			}(i)
+		}
+		for i := 5; i < 15; i++ {
+			wg.Add(1)
+			go func(n int) {
+				defer wg.Done()
+				_, _ = store.GetQueue(fmt.Sprintf("queue-%d", n))
+			}(i)
+		}
+		wg.Wait()
+
+		// Verify all queues are accessible
+		count := 0
+		store.EachQueue(func(q Queue) {
+			count++
+		})
+		assert.True(t, count >= 5, "expected at least 5 queues, got %d", count)
+	})
 }
 
 func fakeJob() (string, []byte) {

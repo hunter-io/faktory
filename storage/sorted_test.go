@@ -10,6 +10,36 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestDecomposeKeyParsing(t *testing.T) {
+	// Test that decompose correctly handles the timestamp|jid format,
+	// including edge cases with the "|" delimiter.
+	t.Run("valid key", func(t *testing.T) {
+		now := util.Nows()
+		key := []byte(fmt.Sprintf("%s|abc123", now))
+		score, jid, err := decompose(key)
+		assert.NoError(t, err)
+		assert.Equal(t, "abc123", jid)
+		assert.True(t, score > 0, "expected positive score, got %f", score)
+	})
+
+	t.Run("key with pipe in jid", func(t *testing.T) {
+		// SplitN(key, "|", 2) ensures a JID containing "|" is preserved intact.
+		now := util.Nows()
+		key := []byte(fmt.Sprintf("%s|jid-with|pipe", now))
+		score, jid, err := decompose(key)
+		assert.NoError(t, err)
+		assert.Equal(t, "jid-with|pipe", jid)
+		assert.True(t, score > 0, "expected positive score, got %f", score)
+	})
+
+	t.Run("key without pipe", func(t *testing.T) {
+		key := []byte("nopipe")
+		_, _, err := decompose(key)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Invalid key")
+	})
+}
+
 func TestBasicSortedOps(t *testing.T) {
 	withRedis(t, "sorted", func(t *testing.T, store Store) {
 		t.Run("junk data", func(t *testing.T) {

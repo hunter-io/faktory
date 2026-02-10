@@ -51,8 +51,8 @@ func (q *redisQueue) Each(fn func(index int, data []byte) error) error {
 }
 
 func (q *redisQueue) Clear() (uint64, error) {
-	q.store.rclient.Del(q.name)
-	return 0, nil
+	err := q.store.rclient.Del(q.name).Err()
+	return 0, err
 }
 
 func (q *redisQueue) init() error {
@@ -75,8 +75,7 @@ func (q *redisQueue) Add(job *client.Job) error {
 }
 
 func (q *redisQueue) Push(priority uint8, payload []byte) error {
-	q.store.rclient.LPush(q.name, payload)
-	return nil
+	return q.store.rclient.LPush(q.name, payload).Err()
 }
 
 // non-blocking, returns immediately if there's nothing enqueued
@@ -97,6 +96,9 @@ func (q *redisQueue) _pop() ([]byte, error) {
 }
 
 func (q *redisQueue) BPop(ctx context.Context) ([]byte, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 	val, err := q.store.rclient.BRPop(2*time.Second, q.name).Result()
 	if err != nil {
 		if err == redis.Nil {
