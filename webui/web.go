@@ -5,8 +5,10 @@ import (
 	"bytes"
 	"context"
 	"crypto/subtle"
+	"embed"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"strings"
 	"time"
@@ -15,6 +17,9 @@ import (
 	"github.com/hunter-io/faktory/util"
 	"github.com/justinas/nosurf"
 )
+
+//go:embed static
+var staticFiles embed.FS
 
 type Tab struct {
 	Name string
@@ -32,30 +37,26 @@ var (
 	}
 
 	// these are used in testing only
-	staticHandler = cache(http.FileServer(&AssetFS{Asset: Asset, AssetDir: AssetDir}))
+	staticHandler = cache(http.FileServer(http.FS(staticFiles)))
 )
 
 //go:generate ego .
-//go:generate go-bindata -pkg webui -o static.go static/...
 
 type localeMap map[string]map[string]string
-type assetLookup func(string) ([]byte, error)
 
 var (
-	AssetLookups = []assetLookup{Asset}
-	locales      = localeMap{}
+	locales = localeMap{}
 )
 
 func init() {
-	files, err := AssetDir("static/locales")
+	entries, err := fs.ReadDir(staticFiles, "static/locales")
 	if err != nil {
 		panic(err)
 	}
-	for _, filename := range files {
-		name := strings.Split(filename, ".")[0]
+	for _, entry := range entries {
+		name := strings.Split(entry.Name(), ".")[0]
 		locales[name] = nil
 	}
-	//util.Debugf("Initialized %d locales", len(files))
 }
 
 type Lifecycle struct {
@@ -206,28 +207,19 @@ func translations(locale string) map[string]string {
 		return nil
 	}
 
-	if ok {
-		//util.Debugf("Booting the %s locale", locale)
-		strs := map[string]string{}
-		for _, finder := range AssetLookups {
-			content, err := finder(fmt.Sprintf("static/locales/%s.yml", locale))
-			if err != nil {
-				continue
-			}
-
-			scn := bufio.NewScanner(bytes.NewReader(content))
-			for scn.Scan() {
-				kv := strings.Split(scn.Text(), ":")
-				if len(kv) == 2 {
-					strs[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
-				}
+	strs = map[string]string{}
+	content, err := staticFiles.ReadFile(fmt.Sprintf("static/locales/%s.yml", locale))
+	if err == nil {
+		scn := bufio.NewScanner(bytes.NewReader(content))
+		for scn.Scan() {
+			kv := strings.Split(scn.Text(), ":")
+			if len(kv) == 2 {
+				strs[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
 			}
 		}
-		locales[locale] = strs
-		return strs
 	}
-
-	panic("Shouldn't get here")
+	locales[locale] = strs
+	return strs
 }
 
 func acceptableLanguages(header string) []string {

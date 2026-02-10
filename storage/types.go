@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hunter-io/faktory/client"
 	"github.com/go-redis/redis"
+	"github.com/hunter-io/faktory/client"
 )
 
 type BackupInfo struct {

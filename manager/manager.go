@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-redis/redis"
 	"github.com/hunter-io/faktory/client"
 	"github.com/hunter-io/faktory/storage"
 	"github.com/hunter-io/faktory/util"
-	"github.com/go-redis/redis"
 )
 
 const (

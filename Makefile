@@ -3,185 +3,57 @@ VERSION=0.15.0
 
 # when fixing packaging bugs but not changing the binary, we increment ITERATION
 ITERATION=1
-BASENAME=$(NAME)_$(VERSION)-$(ITERATION)
 
-TEST_FLAGS=-parallel 4
-ifdef DETECT_RACES
-	TEST_FLAGS += -race
-endif
-
-# TODO I'd love some help making this a proper Makefile
-# with real file dependencies.
+DOCKER_IMAGE=$(NAME)
+DOCKER_TEST_IMAGE=$(NAME)-test
 
 .DEFAULT_GOAL := help
 
 all: test
 
-release:
-	cp /tmp/faktory-pro_$(VERSION)-$(ITERATION).macos.tbz packaging/output/systemd
-	@echo Generating release notes
-	ruby .github/notes.rb $(VERSION)
-	@echo Releasing $(NAME) $(VERSION)-$(ITERATION)
-	hub release create v$(VERSION)-$(ITERATION) \
-		-a packaging/output/systemd/faktory_$(VERSION)-$(ITERATION)_amd64.deb \
-		-a packaging/output/systemd/faktory-$(VERSION)-$(ITERATION).x86_64.rpm \
-		-a packaging/output/systemd/faktory-pro_$(VERSION)-$(ITERATION).macos.tbz \
-	 	-F /tmp/release-notes.md -e -o
+test: ## Run test suite in Docker
+	docker build -t $(DOCKER_TEST_IMAGE) -f Dockerfile.test .
+	docker run --rm $(DOCKER_TEST_IMAGE)
 
-prepare: ## Download all dependencies
-	@go get github.com/benbjohnson/ego/cmd/ego
-	@go get github.com/jteeuwen/go-bindata/go-bindata
-	@echo Now you should be ready to run "make"
+build: ## Build production Docker image
+	docker build -t $(DOCKER_IMAGE):$(VERSION) -t $(DOCKER_IMAGE):latest .
 
-test: clean generate ## Execute test suite
-	go test $(TEST_FLAGS) \
-		github.com/hunter-io/faktory/client \
-		github.com/hunter-io/faktory/cli \
-		github.com/hunter-io/faktory/manager \
-		github.com/hunter-io/faktory/server \
-		github.com/hunter-io/faktory/storage \
-		github.com/hunter-io/faktory/test \
-		github.com/hunter-io/faktory/util \
-		github.com/hunter-io/faktory/webui
-
-dimg: xbuild ## Make a Docker image for the current version
-	#eval $(shell docker-machine env default)
-	docker build \
-		--tag eu.gcr.io/hunter-io/faktory:$(VERSION) \
-		--tag eu.gcr.io/hunter-io/faktory:latest \
-		.
-
-drun: ## Run Faktory in a local Docker image, see also "make dimg"
+run: build ## Run Faktory in Docker
 	docker run --rm -it -e "FAKTORY_SKIP_PASSWORD=true" \
 		-v faktory-data:/var/lib/faktory \
 		-p 127.0.0.1:7419:7419 \
 		-p 127.0.0.1:7420:7420 \
-		eu.gcr.io/hunter-io/faktory:latest /faktory -e production
+		$(DOCKER_IMAGE):latest /faktory -e production
 
-dmon: ## Monitor Redis within the running Docker image
-	docker run --rm -it -t -i \
-		-v faktory-data:/var/lib/faktory \
-		eu.gcr.io/hunter-io/faktory:latest /usr/bin/redis-cli -s /var/lib/faktory/db/redis.sock monitor
+fmt: ## Format code in Docker (modifies local files)
+	docker run --rm -v "$$(pwd)":/src -w /src golang:1.25-alpine go fmt ./...
 
-#dinsp:
-	#docker run --rm -it -e "FAKTORY_PASSWORD=${PASSWORD}" \
-		#-p 127.0.0.1:7419:7419 \
-		#-p 127.0.0.1:7420:7420 \
-		#-v faktory-data:/var/lib/faktory \
-		#eu.gcr.io/hunter-io/faktory:$(VERSION) /bin/bash
+generate: ## Generate webui templates in Docker (copies generated files locally)
+	docker build -t $(DOCKER_TEST_IMAGE) -f Dockerfile.test .
+	container_id=$$(docker create $(DOCKER_TEST_IMAGE)) && \
+		for f in $$(docker run --rm $(DOCKER_TEST_IMAGE) sh -c 'ls /app/webui/*.ego.go' 2>/dev/null); do \
+			docker cp $$container_id:$$f webui/$$(basename $$f); \
+		done && \
+		docker rm $$container_id > /dev/null
 
-dpush: tag
-	docker push eu.gcr.io/hunter-io/faktory:$(VERSION)
-	docker push eu.gcr.io/hunter-io/faktory:latest
+cover: ## Generate coverage report in Docker
+	docker build -t $(DOCKER_TEST_IMAGE) -f Dockerfile.test .
+	docker run --rm -v "$$(pwd)":/out $(DOCKER_TEST_IMAGE) \
+		sh -c "redis-server --daemonize yes && sleep 1 && go test -cover -coverprofile /out/cover.out github.com/hunter-io/faktory/server"
+	@echo "Coverage written to cover.out"
 
-generate:
-	go generate github.com/hunter-io/faktory/webui
-
-cover:
-	go test -cover -coverprofile cover.out github.com/hunter-io/faktory/server
-	go tool cover -html=cover.out -o coverage.html
-	open coverage.html
-
-xbuild: clean generate
-	@GOOS=linux GOARCH=amd64 go build -o $(NAME) cmd/faktory/daemon.go
-
-build: clean generate
-	go build -o $(NAME) cmd/faktory/daemon.go
-
-mon:
-	redis-cli -s ~/.faktory/db/redis.sock
-
-# this is a separate target because loadtest doesn't need redis or webui
-build_load:
-	go build -o loadtest test/load/main.go
-
-load: # not war
-	go run test/load/main.go 30000 10
-
-megacheck:
-	@megacheck $(shell go list -f '{{ .ImportPath }}'  ./... | grep -ve vendor | paste -sd " " -) || true
-
-# TODO integrate a few useful Golang linters.
-fmt: ## Format the code
-	go fmt ./...
-
-work: ## Run a simple Ruby worker, see also "make run"
-	cd test/ruby && bundle exec faktory-worker -v -r ./app.rb -q critical -q default -q bulk
-
-clean: ## Clean the project, set it up for a new build
-	@rm -f webui/*.ego.go
-	@rm -rf tmp
-	@rm -f main faktory templates.go
-	@rm -rf packaging/output
-	@mkdir -p packaging/output/upstart
-	@mkdir -p packaging/output/systemd
-
-run: clean generate ## Run Faktory daemon locally
-	FAKTORY_PASSWORD=${PASSWORD} go run cmd/faktory/daemon.go -l debug -e development
-
-cssh:
-	pushd build/centos && vagrant up && vagrant ssh
-
-ussh:
-	pushd build/ubuntu && vagrant up && vagrant ssh
-
-# gem install fpm
-# Packaging uses Go's cross compile + fpm so we can build Linux packages on macOS.
-package: clean xbuild deb rpm
-
-version_check:
+version_check: ## Verify version strings are in sync
 	@grep -q $(VERSION) client/faktory.go || (echo VERSIONS OUT OF SYNC && false)
 
-# these two reload targets are meant to be run within the Vagrant boxes
-reload_rpm:
-	sudo rpm -e $(NAME)
-	sudo yum install -y packaging/output/systemd/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
+clean: ## Remove generated files
+	@rm -f webui/*.ego.go
+	@rm -rf tmp
+	@rm -f main faktory templates.go cover.out coverage.html
 
-reload_deb:
-	sudo apt-get purge -y $(NAME)
-	sudo dpkg -i packaging/output/systemd/$(NAME)_$(VERSION)-$(ITERATION)_amd64.deb
-
-rpm: xbuild
-	fpm -s dir -t rpm -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
-		--depends redis \
-		--rpm-compression bzip2 --rpm-os linux \
-	 	--after-install packaging/scripts/postinst.rpm.systemd \
-	 	--before-remove packaging/scripts/prerm.rpm.systemd \
-		--after-remove packaging/scripts/postrm.rpm.systemd \
-		--url https://contribsys.com/faktory \
-		--description "Background job server" \
-		-m "Contributed Systems LLC <info@contribsys.com>" \
-		--iteration $(ITERATION) --license "GPL 3.0" \
-		--vendor "Contributed Systems" -a amd64 \
-		faktory=/usr/bin/faktory \
-		packaging/root/=/
-
-deb: xbuild
-	fpm -s dir -t deb -n $(NAME) -v $(VERSION) -p packaging/output/systemd \
-		--depends redis-server \
-		--deb-priority optional --category admin \
-		--deb-compression bzip2 \
-		--no-deb-no-default-config-files \
-	 	--after-install packaging/scripts/postinst.deb.systemd \
-	 	--before-remove packaging/scripts/prerm.deb.systemd \
-		--after-remove packaging/scripts/postrm.deb.systemd \
-		--url https://contribsys.com/faktory \
-		--description "Background job server" \
-		-m "Contributed Systems LLC <info@contribsys.com>" \
-		--iteration $(ITERATION) --license "GPL 3.0" \
-		--vendor "Contributed Systems" -a amd64 \
-		faktory=/usr/bin/faktory \
-		packaging/root/=/
-
-tag:
+tag: ## Tag the current version
 	git tag v$(VERSION)-$(ITERATION) && git push --tags || :
 
-upload:	package tag
-	package_cloud push eu.gcr.io/hunter-io/faktory/ubuntu/xenial packaging/output/systemd/$(NAME)_$(VERSION)-$(ITERATION)_amd64.deb
-	package_cloud push eu.gcr.io/hunter-io/faktory/el/7 packaging/output/systemd/$(NAME)-$(VERSION)-$(ITERATION).x86_64.rpm
+.PHONY: help all clean test build run fmt generate cover version_check tag
 
-.PHONY: help all clean test build package upload
-
-
-help:
-		@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+help: ## Show available targets
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

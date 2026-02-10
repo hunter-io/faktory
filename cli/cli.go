@@ -182,8 +182,9 @@ func stringConfig(cfg map[string]interface{}, subsys string, elm string, defval 
 }
 
 // Read all config files in:
-//   /etc/faktory/conf.d/*.toml (in production)
-//   ~/.faktory/conf.d/*.toml (in development)
+//
+//	/etc/faktory/conf.d/*.toml (in production)
+//	~/.faktory/conf.d/*.toml (in development)
 //
 // They are read in alphabetical order.
 // File contents are shallow merged, a latter file

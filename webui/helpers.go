@@ -263,7 +263,7 @@ func rss() string {
 	}
 
 	lines := bytes.Split(content, []byte("\n"))
-	for line := range lines {
+	for _, line := range lines {
 		ls := string(line)
 		if strings.Contains(ls, "VmRSS") {
 			return strings.Split(ls, ":")[1]

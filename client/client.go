@@ -130,7 +130,7 @@ func DefaultServer() *Server {
 //
 // Use the URL to configure any necessary password:
 //
-//    tcp://:mypassword@localhost:7419
+//	tcp://:mypassword@localhost:7419
 //
 // By default Open assumes localhost with no password
 // which is appropriate for local development.
@@ -146,8 +146,7 @@ func Open() (*Client, error) {
 
 // Dial connects to the remote faktory server.
 //
-//   client.Dial(client.Localhost, "topsecret")
-//
+//	client.Dial(client.Localhost, "topsecret")
 func Dial(srv *Server, password string) (*Client, error) {
 	client := emptyClientData()
 
