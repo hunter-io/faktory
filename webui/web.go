@@ -372,6 +372,7 @@ func cache(h http.Handler) http.HandlerFunc {
 
 func protect(enabled bool, h http.HandlerFunc) http.HandlerFunc {
 	hndlr := nosurf.New(h)
+	hndlr.SetIsTLSFunc(func(r *http.Request) bool { return r.TLS != nil })
 	hndlr.ExemptFunc(func(r *http.Request) bool {
 		return !enabled
 	})
