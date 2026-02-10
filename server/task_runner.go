@@ -36,7 +36,7 @@ type task struct {
 type Taskable interface {
 	Name() string
 	Execute() error
-	Stats() map[string]interface{}
+	Stats() map[string]any
 }
 
 func newTaskRunner() *taskRunner {
@@ -73,8 +73,8 @@ func (ts *taskRunner) Run(stopper chan bool) {
 	}()
 }
 
-func (ts *taskRunner) Stats() map[string]map[string]interface{} {
-	data := map[string]map[string]interface{}{}
+func (ts *taskRunner) Stats() map[string]map[string]any {
+	data := map[string]map[string]any{}
 
 	ts.mutex.RLock()
 	defer ts.mutex.RUnlock()

@@ -3,7 +3,6 @@ package cli
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -168,9 +167,9 @@ func BuildServer(opts CliOptions) (*server.Server, func(), error) {
 	return s, stopper, nil
 }
 
-func stringConfig(cfg map[string]interface{}, subsys string, elm string, defval string) string {
+func stringConfig(cfg map[string]any, subsys string, elm string, defval string) string {
 	if mapp, ok := cfg[subsys]; ok {
-		if mappp, ok := mapp.(map[string]interface{}); ok {
+		if mappp, ok := mapp.(map[string]any); ok {
 			if val, ok := mappp[elm]; ok {
 				if sval, ok := val.(string); ok {
 					return sval
@@ -189,8 +188,8 @@ func stringConfig(cfg map[string]interface{}, subsys string, elm string, defval 
 // They are read in alphabetical order.
 // File contents are shallow merged, a latter file
 // can override a value from an earlier file.
-func readConfig(cdir string, env string) (map[string]interface{}, error) {
-	hash := map[string]interface{}{}
+func readConfig(cdir string, env string) (map[string]any, error) {
+	hash := map[string]any{}
 
 	globs := []string{
 		fmt.Sprintf("%s/conf.d/*.toml", cdir),
@@ -204,14 +203,13 @@ func readConfig(cdir string, env string) (map[string]interface{}, error) {
 
 		for _, file := range matches {
 			util.Debugf("Reading configuration in %s", file)
-			fileBytes, err := ioutil.ReadFile(file)
+			fileBytes, err := os.ReadFile(file)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("read config %s: %w", file, err)
 			}
 			err = toml.Unmarshal(fileBytes, &hash)
 			if err != nil {
-				util.Warnf("Unable to parse TOML file at %s", file)
-				return nil, err
+				return nil, fmt.Errorf("parse config %s: %w", file, err)
 			}
 		}
 	}
@@ -224,7 +222,7 @@ func readConfig(cdir string, env string) (map[string]interface{}, error) {
 // [faktory]
 // password = "foobar" # or...
 // password = "/run/secrets/my_faktory_password"
-func fetchPassword(cfg map[string]interface{}, env string) (string, error) {
+func fetchPassword(cfg map[string]any, env string) (string, error) {
 	password := ""
 
 	// allow the password to be injected via ENV rather than committed
@@ -241,7 +239,7 @@ func fetchPassword(cfg map[string]interface{}, env string) (string, error) {
 			password = val
 
 			// clear password so we can log it safely
-			x := cfg["faktory"].(map[string]interface{})
+			x := cfg["faktory"].(map[string]any)
 			x["password"] = "********"
 		}
 	}
@@ -256,9 +254,9 @@ func fetchPassword(cfg map[string]interface{}, env string) (string, error) {
 	if strings.HasPrefix(password, "/") {
 		// allow password value to point to a file.
 		// this is how Docker secrets work.
-		data, err := ioutil.ReadFile(password)
+		data, err := os.ReadFile(password)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("read password file %s: %w", password, err)
 		}
 
 		password = strings.TrimSpace(string(data))

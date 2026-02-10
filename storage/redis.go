@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -50,7 +49,7 @@ func BootRedis(path string, sock string) (func(), error) {
 
 	err := os.MkdirAll(path, os.ModeDir|0755)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("boot redis: create directory %q: %w", path, err)
 	}
 
 	rclient := redis.NewClient(&redis.Options{
@@ -65,7 +64,7 @@ func BootRedis(path string, sock string) (func(), error) {
 		conffilename := "/tmp/redis.conf"
 		if _, err := os.Stat(conffilename); err != nil {
 			if err != nil && os.IsNotExist(err) {
-				err := ioutil.WriteFile("/tmp/redis.conf", []byte(fmt.Sprintf(redisconf, client.Version)), 0444)
+				err := os.WriteFile("/tmp/redis.conf", []byte(fmt.Sprintf(redisconf, client.Version)), 0444)
 				if err != nil {
 					return nil, err
 				}
@@ -106,7 +105,7 @@ func BootRedis(path string, sock string) (func(), error) {
 		instances[sock] = cmd
 		err = cmd.Start()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("boot redis: start process: %w", err)
 		}
 
 		// wait a few seconds for Redis to start
@@ -214,8 +213,15 @@ func (store *redisStore) Stats() map[string]string {
 
 // queues are iterated in sorted, lexigraphical order
 func (store *redisStore) EachQueue(x func(Queue)) {
+	store.mu.Lock()
+	queues := make([]*redisQueue, 0, len(store.queueSet))
 	for _, k := range store.queueSet {
-		x(k)
+		queues = append(queues, k)
+	}
+	store.mu.Unlock()
+
+	for _, q := range queues {
+		x(q)
 	}
 }
 

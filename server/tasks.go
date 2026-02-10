@@ -27,8 +27,8 @@ func (r *reservationReaper) Execute() error {
 	return nil
 }
 
-func (r *reservationReaper) Stats() map[string]interface{} {
-	return map[string]interface{}{
+func (r *reservationReaper) Stats() map[string]any {
+	return map[string]any{
 		"size":   r.m.WorkingCount(),
 		"reaped": atomic.LoadInt64(&r.count),
 	}
@@ -52,8 +52,8 @@ func (r *beatReaper) Execute() error {
 	return nil
 }
 
-func (r *beatReaper) Stats() map[string]interface{} {
-	return map[string]interface{}{
+func (r *beatReaper) Stats() map[string]any {
+	return map[string]any{
 		"size":   r.w.Count(),
 		"reaped": atomic.LoadInt64(&r.count),
 	}

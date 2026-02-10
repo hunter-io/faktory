@@ -1,23 +1,22 @@
 package cli
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func pwdCfg(value string) map[string]interface{} {
-	return map[string]interface{}{
-		"faktory": map[string]interface{}{
+func pwdCfg(value string) map[string]any {
+	return map[string]any{
+		"faktory": map[string]any{
 			"password": value,
 		},
 	}
 }
 
 func TestPasswords(t *testing.T) {
-	emptyCfg := map[string]interface{}{}
+	emptyCfg := map[string]any{}
 	pwd := "cce29d6565ab7376"
 
 	t.Run("DevWithPassword", func(t *testing.T) {
@@ -26,7 +25,7 @@ func TestPasswords(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 16, len(pwd))
 		assert.Equal(t, "cce29d6565ab7376", pwd)
-		assert.Equal(t, "********", cfg["faktory"].(map[string]interface{})["password"])
+		assert.Equal(t, "********", cfg["faktory"].(map[string]any)["password"])
 	})
 
 	t.Run("DevWithoutPassword", func(t *testing.T) {
@@ -42,7 +41,7 @@ func TestPasswords(t *testing.T) {
 	})
 
 	t.Run("ProductionWithFile", func(t *testing.T) {
-		err := ioutil.WriteFile("/tmp/test-password", []byte("foobar"), os.FileMode(0666))
+		err := os.WriteFile("/tmp/test-password", []byte("foobar"), os.FileMode(0666))
 		assert.NoError(t, err)
 		cfg := pwdCfg("/tmp/test-password")
 		pwd, err := fetchPassword(cfg, "production")
@@ -56,7 +55,7 @@ func TestPasswords(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 16, len(pwd))
 		assert.Equal(t, "cce29d6565ab7376", pwd)
-		assert.Equal(t, "********", cfg["faktory"].(map[string]interface{})["password"])
+		assert.Equal(t, "********", cfg["faktory"].(map[string]any)["password"])
 	})
 
 	t.Run("ProductionEnvPassword", func(t *testing.T) {

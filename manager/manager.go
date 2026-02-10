@@ -154,17 +154,20 @@ func (m *manager) Push(job *client.Job) error {
 	if job.At != "" {
 		t, err := util.ParseTime(job.At)
 		if err != nil {
-			return fmt.Errorf("Invalid timestamp for 'at': '%s'", job.At)
+			return fmt.Errorf("push: invalid timestamp for 'at': '%s'", job.At)
 		}
 
 		if t.After(time.Now()) {
 			data, err := json.Marshal(job)
 			if err != nil {
-				return err
+				return fmt.Errorf("push: marshal job: %w", err)
 			}
 
 			// scheduler for later
-			return m.store.Scheduled().AddElement(job.At, job.Jid, data)
+			if err := m.store.Scheduled().AddElement(job.At, job.Jid, data); err != nil {
+				return fmt.Errorf("push: schedule job: %w", err)
+			}
+			return nil
 		}
 	}
 
@@ -175,7 +178,7 @@ func (m *manager) Push(job *client.Job) error {
 func (m *manager) enqueue(job *client.Job) error {
 	q, err := m.store.GetQueue(job.Queue)
 	if err != nil {
-		return err
+		return fmt.Errorf("enqueue: get queue %q: %w", job.Queue, err)
 	}
 
 	return callMiddleware(m.pushChain, Ctx{context.Background(), job, m}, func() error {
@@ -196,18 +199,18 @@ restart:
 	for idx, qname := range queues {
 		q, err := m.store.GetQueue(qname)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("fetch: get queue %q: %w", qname, err)
 		}
 
 		data, err := q.Pop()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("fetch: pop queue %q: %w", qname, err)
 		}
 		if data != nil {
 			var job client.Job
 			err = json.Unmarshal(data, &job)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("fetch: unmarshal job from %q: %w", qname, err)
 			}
 			err = callMiddleware(m.fetchChain, Ctx{ctx, &job, m}, func() error {
 				return m.reserve(wid, &job)
@@ -237,13 +240,13 @@ restart:
 	// rather than seconds.
 	data, err := first.BPop(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("fetch: blocking pop: %w", err)
 	}
 	if data != nil {
 		var job client.Job
 		err = json.Unmarshal(data, &job)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("fetch: unmarshal job: %w", err)
 		}
 		err = callMiddleware(m.fetchChain, Ctx{ctx, &job, m}, func() error {
 			return m.reserve(wid, &job)

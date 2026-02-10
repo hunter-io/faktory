@@ -9,7 +9,7 @@ type ServerOptions struct {
 	ConfigDirectory  string
 	Environment      string
 	Password         string
-	GlobalConfig     map[string]interface{}
+	GlobalConfig     map[string]any
 }
 
 func (so *ServerOptions) String(subsys string, key string, defval string) string {
@@ -22,13 +22,13 @@ func (so *ServerOptions) String(subsys string, key string, defval string) string
 	return str
 }
 
-func (so *ServerOptions) Config(subsys string, key string, defval interface{}) interface{} {
+func (so *ServerOptions) Config(subsys string, key string, defval any) any {
 	mapp, ok := so.GlobalConfig[subsys]
 	if !ok {
 		return defval
 	}
 
-	maps, ok := mapp.(map[string]interface{})
+	maps, ok := mapp.(map[string]any)
 	if !ok {
 		util.Warnf("Invalid configuration, expected a %s subsystem, using default", subsys)
 		return defval

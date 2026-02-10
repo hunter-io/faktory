@@ -60,7 +60,7 @@ func (rs *redisSorted) AddElement(timestamp string, jid string, payload []byte) 
 }
 
 func decompose(key []byte) (float64, string, error) {
-	slice := strings.Split(string(key), "|")
+	slice := strings.SplitN(string(key), "|", 2)
 	if len(slice) != 2 {
 		return 0, "", fmt.Errorf("Invalid key, expected \"timestamp|jid\", not %s", string(key))
 	}

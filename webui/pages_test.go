@@ -43,11 +43,11 @@ func TestPages(t *testing.T) {
 			assert.Equal(t, 200, w.Code)
 			assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 
-			var content map[string]interface{}
+			var content map[string]any
 			err = json.Unmarshal(w.Body.Bytes(), &content)
 			assert.NoError(t, err)
 
-			s := content["server"].(map[string]interface{})
+			s := content["server"].(map[string]any)
 			uid := s["uptime"].(float64)
 			assert.Equal(t, float64(1234567), uid)
 		})

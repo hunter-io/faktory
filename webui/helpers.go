@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -257,7 +257,7 @@ func rss() string {
 		return ""
 	}
 
-	content, err := ioutil.ReadFile("/proc/self/status")
+	content, err := os.ReadFile("/proc/self/status")
 	if err != nil {
 		return ""
 	}

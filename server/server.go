@@ -314,7 +314,7 @@ func (s *Server) uptimeInSeconds() int {
 	return int(time.Since(s.Stats.StartedAt).Seconds())
 }
 
-func (s *Server) CurrentState() (map[string]interface{}, error) {
+func (s *Server) CurrentState() (map[string]any, error) {
 	defalt, err := s.store.GetQueue("default")
 	if err != nil {
 		return nil, err
@@ -323,16 +323,16 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 	queues := make(map[string]uint64)
 	totalQueued := 0
 	totalQueues := 0
-	// queue size is cached so this should be very efficient.
+	// each q.Size() call hits Redis (LLen), so this scales with queue count.
 	s.store.EachQueue(func(q storage.Queue) {
 		queues[q.Name()] = q.Size()
 		totalQueued += int(q.Size())
 		totalQueues++
 	})
 
-	return map[string]interface{}{
+	return map[string]any{
 		"server_utc_time": time.Now().UTC().Format("03:04:05 UTC"),
-		"faktory": map[string]interface{}{
+		"faktory": map[string]any{
 			"default_size":    defalt.Size(),
 			"queues":          queues,
 			"total_failures":  s.store.TotalFailures(),
@@ -340,7 +340,7 @@ func (s *Server) CurrentState() (map[string]interface{}, error) {
 			"total_enqueued":  totalQueued,
 			"total_queues":    totalQueues,
 			"tasks":           s.taskRunner.Stats()},
-		"server": map[string]interface{}{
+		"server": map[string]any{
 			"faktory_version": client.Version,
 			"uptime":          s.uptimeInSeconds(),
 			"connections":     atomic.LoadUint64(&s.Stats.Connections),

@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"testing"
@@ -259,6 +260,64 @@ func TestManager(t *testing.T) {
 			fetchedJob, err := m.Fetch(ctx, "workerId", queues...)
 			assert.NoError(t, err)
 			assert.NotEmpty(t, fetchedJob)
+		})
+	})
+}
+
+func TestErrorWrapping(t *testing.T) {
+	withRedis(t, "errors", func(t *testing.T, store storage.Store) {
+
+		t.Run("PushInvalidTimestampWrapsError", func(t *testing.T) {
+			store.Flush()
+			m := NewManager(store)
+
+			job := client.NewJob("ScheduledJob", 1, 2, 3)
+			job.At = "not-a-time"
+			err := m.Push(job)
+
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "push:")
+		})
+
+		t.Run("FetchEmptyQueuesReturnsError", func(t *testing.T) {
+			store.Flush()
+			m := NewManager(store)
+
+			job, err := m.Fetch(context.Background(), "wid")
+			assert.Nil(t, job)
+			assert.Error(t, err)
+		})
+
+		t.Run("FetchWithCancelledContext", func(t *testing.T) {
+			store.Flush()
+			m := NewManager(store)
+
+			ctx, cancel := context.WithCancel(context.Background())
+			cancel() // cancel immediately
+
+			start := time.Now()
+			job, err := m.Fetch(ctx, "wid", "default")
+			elapsed := time.Since(start)
+
+			// With cancelled context, BPop should short-circuit.
+			// The error chain should contain the context cancellation.
+			assert.Nil(t, job)
+			assert.Error(t, err)
+			assert.True(t, errors.Is(err, context.Canceled), "error should wrap context.Canceled, got: %v", err)
+			assert.True(t, elapsed < 1*time.Second, "should not block on cancelled context, took: %v", elapsed)
+		})
+
+		t.Run("EnqueueInvalidQueueNameWrapsError", func(t *testing.T) {
+			store.Flush()
+			m := NewManager(store)
+
+			job := client.NewJob("BadQueue", 1, 2, 3)
+			job.Queue = "invalid@queue"
+			err := m.Push(job)
+
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "enqueue:")
+			assert.Contains(t, err.Error(), "invalid@queue")
 		})
 	})
 }
