@@ -426,6 +426,7 @@ func TestPages(t *testing.T) {
 			assert.NoError(t, err)
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			req.Header.Set("Cookie", "csrf_token="+cookieToken)
+			req.Header.Set("Origin", "http://localhost:7420")
 			w = httptest.NewRecorder()
 			csrfBusyHandler.ServeHTTP(w, req)
 
