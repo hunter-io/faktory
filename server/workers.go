@@ -9,7 +9,6 @@ import (
 	"github.com/hunter-io/faktory/util"
 )
 
-//
 // This represents a single client process.  It may have many network
 // connections open to Faktory.
 //
@@ -30,7 +29,7 @@ import (
 //
 // A worker process has a simple three-state lifecycle:
 //
-//  running -> quiet -> terminate
+//	running -> quiet -> terminate
 //
 // - Running means the worker is alive and processing jobs.
 // - Quiet means the worker should stop FETCHing new jobs but continue working on existing jobs.
@@ -47,7 +46,6 @@ import (
 //
 // Workers will typically also respond to standard Unix signals.
 // faktory_worker_ruby uses TSTP ("Threads SToP") as the quiet signal and TERM as the terminate signal.
-//
 type ClientData struct {
 	Hostname     string   `json:"hostname"`
 	Wid          string   `json:"wid"`

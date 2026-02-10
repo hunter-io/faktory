@@ -100,7 +100,8 @@ func Infof(msg string, args ...interface{}) {
 }
 
 // Verbosity level helps track down production issues:
-//  -l debug
+//
+//	-l debug
 func Debug(arg string) {
 	if LogDebug {
 		logg.Debug(arg)
@@ -108,7 +109,8 @@ func Debug(arg string) {
 }
 
 // Verbosity level helps track down production issues:
-//  -l debug
+//
+//	-l debug
 func Debugf(msg string, args ...interface{}) {
 	if LogDebug {
 		logg.Debugf(msg, args...)

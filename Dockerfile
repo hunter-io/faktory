@@ -1,9 +1,8 @@
-FROM golang:1.12-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 RUN apk add --no-cache git
 
-RUN go get github.com/benbjohnson/ego/cmd/ego
-RUN go get github.com/jteeuwen/go-bindata/go-bindata
+RUN go install github.com/benbjohnson/ego/cmd/ego@latest
 
 WORKDIR /go/src/github.com/hunter-io/faktory
 
@@ -15,7 +14,7 @@ COPY . .
 RUN go generate github.com/hunter-io/faktory/webui
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /faktory cmd/faktory/daemon.go
 
-FROM alpine:3.8
+FROM alpine:3.21
 RUN apk add --no-cache redis ca-certificates socat
 
 COPY --from=builder /faktory /faktory

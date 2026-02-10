@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"net"
 	"strings"
 	"testing"
 	"time"
@@ -43,6 +44,13 @@ type TestingWriteCloser struct {
 func (wc *TestingWriteCloser) Close() error {
 	return wc.Flush()
 }
+
+func (wc *TestingWriteCloser) Read(b []byte) (int, error)         { return 0, nil }
+func (wc *TestingWriteCloser) LocalAddr() net.Addr                { return nil }
+func (wc *TestingWriteCloser) RemoteAddr() net.Addr               { return nil }
+func (wc *TestingWriteCloser) SetDeadline(t time.Time) error      { return nil }
+func (wc *TestingWriteCloser) SetReadDeadline(t time.Time) error  { return nil }
+func (wc *TestingWriteCloser) SetWriteDeadline(t time.Time) error { return nil }
 
 func (wc *TestingWriteCloser) Output() string {
 	wc.Flush()
