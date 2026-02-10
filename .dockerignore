@@ -1,2 +1,14 @@
 Dockerfile
 docker-compose.yml
+.git
+.github
+.circleci
+.vagrant
+.DS_Store
+*.test
+*.out
+tmp/
+packaging/output/
+build/
+vendor/
+coverage.html
